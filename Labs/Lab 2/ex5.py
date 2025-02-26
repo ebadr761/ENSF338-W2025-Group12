@@ -5,7 +5,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
-
 # 5.1
 # Implement linear search and binary search
 def linearSearch(vector, n, key):
