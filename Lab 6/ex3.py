@@ -1,98 +1,126 @@
 import sys
-import re
 
 class Node:
-    def __init__(self, value, left=None, right=None):
+    def __init__(self, value):
         self.value = value
-        self.left = left
-        self.right = right
+        self.left = None
+        self.right = None
 
-def shunting_yard(tokens):
-    precedence = {'+': 1, '-': 1, '*': 2, '/': 2}
-    output = []
-    stack = []
-    for token in tokens:
-        if token.isdigit():
-            output.append(token)
-        elif token in precedence:
-            while (stack and stack[-1] in precedence and precedence[stack[-1]] >= precedence[token]):
-                output.append(stack.pop())
-            stack.append(token)
-        elif token == '(':
-            stack.append(token)
-        elif token == ')':
-            while stack and stack[-1] != '(':
-                output.append(stack.pop())
-            if not stack:
-                raise ValueError("Mismatched parentheses")
-            stack.pop()  # Remove '('
-        else:
-            raise ValueError(f"Invalid token: {token}")
-    while stack:
-        op = stack.pop()
-        if op == '(':
-            raise ValueError("Mismatched parentheses")
-        output.append(op)
-    return output
+def is_number(token): # used to convert tokens to numbers
+    try:
+        return int(token)
+    except ValueError:
+        return None
 
-def build_tree(rpn):
-    stack = []
-    for token in rpn:
-        if token in {'+', '-', '*', '/'}:
-            right = stack.pop()
-            left = stack.pop()
-            stack.append(Node(token, left, right))
-        else:
-            stack.append(Node(int(token)))
-    if not stack:
-        raise ValueError("No expression provided")
-    return stack[0]
+def parse_expression(tokens):
+    # Base case: empty list
+    if not tokens:
+        return None
+    
+    # If we only have a single token, it must be a number
+    if len(tokens) == 1:
+        num = is_number(tokens[0])
+        if num is not None:
+            return Node(num)
+        raise ValueError(f"Expected number, got {tokens[0]}")
+    
+    # If the expression is surrounded by parentheses, remove them
+    if tokens[0] == '(' and tokens[-1] == ')':
+        # Find matching parenthesis
+        count = 0
+        for i, token in enumerate(tokens):
+            if token == '(':
+                count += 1
+            elif token == ')':
+                count -= 1
+                if count == 0 and i == len(tokens) - 1:
+                    # This is the matching closing parenthesis
+                    return parse_expression(tokens[1:-1]) # use recursion to evaluate inside ()
+    
+    # Find the operator at the root level (not inside nested parentheses)
+    paren_count = 0
+    for i in range(len(tokens) - 1, -1, -1):  # Scan right-to-left for lower precedence ops (+, -) first
+        if tokens[i] == ')':
+            paren_count += 1
+        elif tokens[i] == '(':
+            paren_count -= 1
+        elif paren_count == 0 and tokens[i] in ['+', '-']:
+            return create_operator_node(tokens, i)
+    
+    # No +/- found, look for * and / (higher precedence)
+    for i in range(len(tokens) - 1, -1, -1):
+        if tokens[i] == ')':
+            paren_count += 1
+        elif tokens[i] == '(':
+            paren_count -= 1
+        elif paren_count == 0 and tokens[i] in ['*', '/']:
+            return create_operator_node(tokens, i)
+    
+    # If we reach here, the expression might be malformed
+    raise ValueError(f"Invalid expression: {' '.join(tokens)}")
+
+def create_operator_node(tokens, op_index):
+    node = Node(tokens[op_index])
+    node.left = parse_expression(tokens[:op_index])
+    node.right = parse_expression(tokens[op_index+1:])
+    return node
+'''Binary Search Tree built from parse_expression and create_operator_node'''
 
 def evaluate(node):
+    if node is None:
+        return 0
+    
+    # Leaf node (number)
     if isinstance(node.value, int):
         return node.value
+    
+    # Post-order traversal: evaluate left, then right, then apply operator
     left_val = evaluate(node.left)
     right_val = evaluate(node.right)
+# IDEA: it processes the left and right subexpressions on each side of op
+                #ex. for 3+2:    "+" 
+#                                / \
+#                               3   2
+    # Apply the operator
     if node.value == '+':
-        res = left_val + right_val
+        return left_val + right_val
     elif node.value == '-':
-        res = left_val - right_val
+        return left_val - right_val
     elif node.value == '*':
-        res = left_val * right_val
+        return left_val * right_val
     elif node.value == '/':
-        res = left_val / right_val
+        return left_val / right_val
     else:
         raise ValueError(f"Unknown operator: {node.value}")
-    # Return as integer if the result is a whole number
-    return int(res) if isinstance(res, float) and res.is_integer() else res
-
-def tokenize(expr):
-    # Use regular expression to split the expression into tokens
-    return re.findall(r'\d+|[\+\-\*/()]', expr)
 
 def main():
-    if len(sys.argv) < 2:
-        print("Usage: python ex3.py \"expression\"")
-        sys.exit(1)
-    expr = sys.argv[1]
+    if len(sys.argv) != 2:
+        print("Usage: python ex3.py \"EXPRESSION\"")
+        return
+    
+    expression = sys.argv[1]
+    
+    # Handle simple number case (if input is just a single number)
     try:
-        tokens = tokenize(expr)
-        if not tokens:
-            raise ValueError("No input provided")
-        rpn = shunting_yard(tokens)
-        if not rpn:
-            print(0)
-            return
-        # Handle single number case
-        if len(rpn) == 1:
-            print(int(rpn[0]))
-            return
-        tree = build_tree(rpn)
-        result = evaluate(tree)
-        print(result)
+        value = int(expression)
+        print(value)
+        return
+    except ValueError:
+        pass
+    
+    # Parse and evaluate the expression
+    try:
+        tokens = expression.split()
+        root = parse_expression(tokens)
+        result = evaluate(root)
+        
+        # Print as integer if possible, otherwise as float
+        if result == int(result):
+            print(int(result))
+        else:
+            print(result)
     except Exception as e:
-        print(f"Error evaluating expression: {e}")
-        sys.exit(1)
+        print(f"Error: {e}")
 
 if __name__ == "__main__":
     main()
