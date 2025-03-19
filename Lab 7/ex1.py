@@ -56,7 +56,7 @@ class BinaryTree:
             return 0
         return self.height(node.right) - self.height(node.left)
 
-def generateSearchTasks(n=1000):
+def generateSearchTasks(n = 1000):
     lst = list(range(1, 1001))
     tasks = []
     for i in range(n):
@@ -94,7 +94,7 @@ tasks = generateSearchTasks()
 balanceValues, searchTimes = measurePerformance(bst, tasks)
 
 # Generate scatterplot with absolute balance on the X axis and search time on the Y axis
-plt.scatter(balanceValues, searchTimes, alpha=0.5)
+plt.scatter(balanceValues, searchTimes)
 plt.xlabel("Absolute Balance")
 plt.ylabel("Average Search Time (s)")
 plt.title("Balance vs. Search Time in BST")
