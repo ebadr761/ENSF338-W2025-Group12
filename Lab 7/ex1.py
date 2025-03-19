@@ -94,7 +94,7 @@ tasks = generateSearchTasks()
 balanceValues, searchTimes = measurePerformance(bst, tasks)
 
 # Generate scatterplot with absolute balance on the X axis and search time on the Y axis
-plt.scatter(balanceValues, searchTimes, alpha=0.5)
+plt.scatter(balanceValues, searchTimes)
 plt.xlabel("Absolute Balance")
 plt.ylabel("Average Search Time (s)")
 plt.title("Balance vs. Search Time in BST")
