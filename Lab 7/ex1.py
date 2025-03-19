@@ -56,7 +56,7 @@ class BinaryTree:
             return 0
         return self.height(node.right) - self.height(node.left)
 
-def generateSearchTasks(n=1000):
+def generateSearchTasks(n = 1000):
     lst = list(range(1, 1001))
     tasks = []
     for i in range(n):
